@@ -236,7 +236,8 @@ function pathGet(obj, p, d){
 }
 /* ---------- 暴露度公式（与卡内 EJS 投影一致：唯一规范） ---------- */
 /* 七件套分级权重：缺失 胸罩/内裤20 上装/下装12 外衣8 丝袜4 鞋0；半褪=缺失一半 */
-var CLOTH7 = ['外衣','上装','下装','胸罩','内裤','丝袜','鞋'];
+/* CLOTH7 顺序即档案页显示顺序：从上往下（上身外→内，再下身、腿、脚） */
+var CLOTH7 = ['外衣','上装','胸罩','下装','内裤','丝袜','鞋'];
 var MISS_W = { '外衣':8, '上装':12, '下装':12, '胸罩':20, '内裤':20, '丝袜':4, '鞋':0 };
 var HALF_W = { '外衣':4, '上装':6, '下装':6, '胸罩':10, '内裤':10, '丝袜':2, '鞋':0 };
 function computeExposure(stat){
@@ -344,6 +345,9 @@ function renderProfile(){
     if (k === '外衣') {
       if (/裙/.test(item)) label = '裙装';
       else if (/外套|大衣|风衣|夹克/.test(item)) label = '外套';
+    } else if (k === '下装') {
+      if (/裤/.test(item)) label = '裤子';
+      else if (/裙/.test(item)) label = '裙子';
     }
     return { k:k, label:label, item:item, stt:stt, cls:cls };
   });
