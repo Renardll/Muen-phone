@@ -235,17 +235,24 @@ function pathGet(obj, p, d){
   } catch (e) { return d; }
 }
 /* ---------- 暴露度公式（与卡内 EJS 投影一致：唯一规范） ---------- */
+/* 七件套分级权重：缺失 胸罩/内裤20 上装/下装12 外衣8 丝袜4 鞋0；半褪=缺失一半 */
+var CLOTH7 = ['外衣','上装','下装','胸罩','内裤','丝袜','鞋'];
+var MISS_W = { '外衣':8, '上装':12, '下装':12, '胸罩':20, '内裤':20, '丝袜':4, '鞋':0 };
+var HALF_W = { '外衣':4, '上装':6, '下装':6, '胸罩':10, '内裤':10, '丝袜':2, '鞋':0 };
 function computeExposure(stat){
   var privacy = pathGet(stat, '世界.私密性', '公开');
   var activity = pathGet(stat, '世界.活动', '日常');
-  var CLOTH = ['外衣','上装','下装','内衣','丝袜','鞋'];
   var slot = function(k){ return pathGet(stat, '角色.衣着.'+k+'.状态', '完好'); };
-  var removed = CLOTH.filter(function(k){ return ['脱下','破损'].indexOf(slot(k)) >= 0; }).length;
-  var half = CLOTH.filter(function(k){ return slot(k) === '半褪'; }).length;
+  var missing = 0, halfScore = 0, removedN = 0, halfN = 0;
+  CLOTH7.forEach(function(k){
+    var s = slot(k);
+    if (['脱下','破损'].indexOf(s) >= 0){ missing += MISS_W[k]; removedN++; }
+    else if (s === '半褪'){ halfScore += HALF_W[k]; halfN++; }
+  });
   var base = privacy==='室内'?5 : privacy==='半公开'?20 : privacy==='野外'?30 : 40;
-  var exposure = Math.min(100, base + removed*12 + half*6);
+  var exposure = Math.min(100, base + missing + halfScore);
   var isNSFW = ['性爱','调教'].indexOf(activity) >= 0;
-  return { exposure:exposure, privacy:privacy, removed:removed, half:half, isNSFW:isNSFW };
+  return { exposure:exposure, privacy:privacy, removed:removedN, half:halfN, missing:missing, halfScore:halfScore, isNSFW:isNSFW };
 }
 function num(v, d){
   var n = Number(unwrap(v, d));
@@ -326,9 +333,8 @@ function renderProfile(){
     '</div>');
   ex.push('</div>');
 
-  /* ── 衣着：只显示实际穿着的 ── */
-  var CLOTH = ['外衣','上装','下装','内衣','丝袜','鞋'];
-  var worn = CLOTH.filter(function(k){
+  /* ── 衣着：只显示实际穿着的（七件套） ── */
+  var worn = CLOTH7.filter(function(k){
     return pathGet(st, '角色.衣着.'+k+'.物品', '未穿') !== '未穿';
   }).map(function(k){
     var item = pathGet(st, '角色.衣着.'+k+'.物品', '未穿');
