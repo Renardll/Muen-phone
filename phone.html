@@ -58,23 +58,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .badge-purple{background:rgba(191,90,242,.16);color:var(--purple)}
 .badge-blue{background:rgba(10,132,255,.16);color:var(--blue)}
 .badge-gray{background:rgba(120,120,140,.18);color:var(--sub)}
-.bar-row{padding:9px 13px;border-top:1px solid var(--line)}
-.bar-row:first-child{border-top:none}
-.bar-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
-.bar-head .lv{color:var(--sub)}
 .bar{height:7px;border-radius:4px;background:#2a2a34;overflow:hidden}
 .bar > i{display:block;height:100%;border-radius:4px;transition:width .5s ease}
 .bar .b-aff{background:linear-gradient(90deg,#ff9f0a,#ffd60a)}
 .bar .b-dep{background:linear-gradient(90deg,#ff375f,#bf5af2)}
 .bar .b-des{background:linear-gradient(90deg,#ff453a,#ff9f0a)}
-.bar .b-exp{background:linear-gradient(90deg,#07c160,#95ec69)}
 .bar .b-skill{background:linear-gradient(90deg,#0a84ff,#64d2ff)}
 .bar .b-dev{background:linear-gradient(90deg,#bf5af2,#ff2d55)}
-.cloth-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 13px 13px}
-.cloth{background:var(--card2);border-radius:10px;padding:8px 10px}
-.cloth .item{font-size:13px;margin-bottom:4px}
-.cloth .status-line{display:flex;align-items:center;gap:6px}
-.cloth .st{font-size:11px;color:var(--sub)}
 .parts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 13px 13px}
 .part{background:var(--card2);border-radius:10px;padding:8px 10px}
 .part .pn{font-size:13px;font-weight:600;margin-bottom:6px}
@@ -82,6 +72,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .text-line{padding:8px 13px;font-size:13px;line-height:1.55;border-top:1px solid var(--line)}
 .text-line:first-child{border-top:none}
 .text-line.empty{color:var(--dim)}
+/* ---------- 世界：自然时间行 + 胶囊 ---------- */
+.world-line{padding:10px 13px 4px;font-size:14px;font-weight:600;letter-spacing:.3px}
+.capsule-row{display:flex;flex-wrap:wrap;gap:6px;padding:4px 13px 10px}
+.capsule{padding:3px 11px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.6}
+.cap-priv{background:rgba(255,159,10,.16);color:var(--amber)}
+.cap-pub{background:rgba(255,69,58,.16);color:var(--red)}
+.cap-indoor{background:rgba(52,199,89,.16);color:#34d97c}
+.cap-nsfw{background:rgba(255,69,58,.16);color:var(--red)}
+.cap-normal{background:rgba(7,193,96,.16);color:#34d97c}
+.cap-other{background:rgba(120,120,140,.18);color:var(--sub)}
+/* ---------- 状态：数值卡（无进度条） ---------- */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 13px 13px}
+.stat-cell{background:var(--card2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.stat-cell .sc-label{font-size:11px;color:var(--sub)}
+.stat-cell .sc-val{font-size:24px;font-weight:700;line-height:1.1}
+.sc-aff{color:var(--amber)} .sc-dep{color:var(--pink)} .sc-des{color:var(--red)} .sc-exp{color:var(--green)}
+.sc-unit{font-size:13px;font-weight:600;color:var(--dim)}
+.stat-cell .sc-sub{display:flex;align-items:center;gap:6px}
+/* ---------- 身体状态：改造列表 ---------- */
+.mod-item{padding:7px 13px;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px;line-height:1.5}
+.mod-item:first-child{border-top:none}
+.mod-item .dot{color:var(--purple);flex:0 0 auto}
 /* ---------- 微信会话列表 ---------- */
 #screen-chatlist{background:var(--bg)}
 .chat-item{display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid var(--line);cursor:pointer}
@@ -272,12 +284,6 @@ document.addEventListener('click', function(e){
 
 /* ---------- 档案页 ---------- */
 function badge(text, cls){ return '<span class="badge '+(cls||'badge-gray')+'">'+esc(text)+'</span>'; }
-function barRow(k, v, cls, pct){
-  var p = Math.max(0, Math.min(100, Math.round(pct)));
-  return '<div class="bar-row"><div class="bar-head"><span>'+esc(k)+'</span>'+
-    '<span class="lv">'+esc(v)+'</span></div>'+
-    '<div class="bar"><i class="'+cls+'" style="width:'+p+'%"></i></div></div>';
-}
 function renderProfile(){
   var body = $('#profileBody');
   var st = state.stat;
@@ -290,47 +296,72 @@ function renderProfile(){
   var activity = pathGet(st, '世界.活动', '日常');
   var exp = computeExposure(st);
   var ex = [];
+
+  /* ── 世界：自然时间 + 胶囊 + 地点 ── */
+  var WEEK_CN = ['', '星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
+  var wk = pathGet(cal, '星期', null);
+  if (/^\d+$/.test(String(wk))) wk = WEEK_CN[Number(wk)] || wk;
+  var season = pathGet(cal, '季节', null);
+  var moment = pathGet(cal, '时刻', null);
+  var timeParts = [wk, season, moment].filter(Boolean);
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>世界</div>');
-  ex.push('<div class="row"><span class="k">日历</span><span class="v">'+
-    esc(pathGet(cal,'星期','?')+' · 第'+pathGet(cal,'日序','?')+'天 · '+pathGet(cal,'季节','?')+' · '+pathGet(cal,'时刻','?'))+'</span></div>');
-  ex.push('<div class="row"><span class="k">地点</span><span class="v">'+esc(pathGet(st,'世界.地点','？'))+'</span></div>');
-  ex.push('<div class="row"><span class="k">私密性</span><span class="v">'+
-    badge(privacy,
-      privacy==='公开'?'badge-red':
-      privacy==='野外'?'badge-amber':
-      privacy==='半公开'?'badge-blue':'badge-green')+'</span></div>');
-  ex.push('<div class="row"><span class="k">活动</span><span class="v">'+
-    badge(activity, exp.isNSFW?'badge-purple':'badge-green')+'</span></div>');
+  ex.push('<div class="world-line">' + esc(timeParts.join(' · ')) + '</div>');
+  ex.push('<div class="capsule-row">' +
+    '<span class="capsule ' + (privacy==='公开'?'cap-pub':privacy==='野外'?'cap-pub':privacy==='半公开'?'cap-priv':'cap-indoor') + '">' + esc(privacy) + '</span>' +
+    '<span class="capsule ' + (exp.isNSFW?'cap-nsfw':activity==='日常'?'cap-normal':'cap-other') + '">' + esc(activity) + '</span>' +
+    '</div>');
+  ex.push('<div class="row"><span class="k">地点</span><span class="v">' + esc(pathGet(st,'世界.地点','？')) + '</span></div>');
   ex.push('</div>');
+
+  /* ── 状态：数值卡（无进度条） ── */
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>状态</div>');
-  ex.push(barRow('好感度', aff, 'b-aff', aff));
-  ex.push(barRow('堕落度', dep, 'b-dep', dep));
-  ex.push(barRow('欲望', des, 'b-des', des));
-  ex.push('<div class="row"><span class="k">暴露程度</span><span class="v">'+
-    badge(exp.exposure+'/100 · '+(exp.isNSFW?'NSFW':'日常'), exp.isNSFW?'badge-purple':'badge-green')+
-    '<br><span style="font-size:11px;color:var(--dim)">'+esc('私密性:'+exp.privacy+' · 缺失:'+exp.removed+'件 · 半褪:'+exp.half+'件')+'</span></span></div>');
+  ex.push('<div class="stat-grid">' +
+    '<div class="stat-cell"><span class="sc-label">好感度</span><span class="sc-val sc-aff">' + aff + '</span></div>' +
+    '<div class="stat-cell"><span class="sc-label">堕落度</span><span class="sc-val sc-dep">' + dep + '</span></div>' +
+    '<div class="stat-cell"><span class="sc-label">欲望</span><span class="sc-val sc-des">' + des + '</span></div>' +
+    '<div class="stat-cell"><span class="sc-label">暴露</span><span class="sc-val sc-exp">' + exp.exposure + '<span class="sc-unit">/100</span></span>' +
+    '<span class="sc-sub">' + badge(exp.isNSFW?'NSFW':'日常', exp.isNSFW?'badge-purple':'badge-green') +
+    badge('缺失'+exp.removed+' · 半褪'+exp.half, 'badge-gray') + '</span></div>' +
+    '</div>');
   ex.push('</div>');
-  /* 衣着 */
+
+  /* ── 衣着：只显示实际穿着的 ── */
   var CLOTH = ['外衣','上装','下装','内衣','丝袜','鞋'];
-  ex.push('<div class="section"><div class="section-title"><span class="dot"></span>衣着</div>');
-  ex.push('<div class="cloth-grid">');
-  CLOTH.forEach(function(k){
+  var worn = CLOTH.filter(function(k){
+    return pathGet(st, '角色.衣着.'+k+'.物品', '未穿') !== '未穿';
+  }).map(function(k){
     var item = pathGet(st, '角色.衣着.'+k+'.物品', '未穿');
     var stt = pathGet(st, '角色.衣着.'+k+'.状态', '完好');
     var cls = stt==='完好'?'badge-green':(stt==='半褪'?'badge-amber':(stt==='脱下'||stt==='破损'||stt==='脱除')?'badge-red':'badge-blue');
-    ex.push('<div class="cloth"><div class="item">'+esc(item)+'</div><div class="status-line">'+badge(stt,cls)+'</div></div>');
+    return { k:k, item:item, stt:stt, cls:cls };
   });
-  ex.push('</div></div>');
-  /* 痕迹 / 改造 */
+  ex.push('<div class="section"><div class="section-title"><span class="dot"></span>衣着</div>');
+  if (worn.length) {
+    worn.forEach(function(c){
+      ex.push('<div class="row"><span class="k">'+esc(c.k)+'</span><span class="v">'+esc(c.item)+' '+badge(c.stt, c.cls)+'</span></div>');
+    });
+  } else {
+    ex.push('<div class="text-line empty">无衣物</div>');
+  }
+  ex.push('</div>');
+
+  /* ── 身体状态：痕迹 + 改造列表 ── */
   var trace = pathGet(st, '角色.痕迹', '');
   var mod = pathGet(st, '角色.改造', '');
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>身体状态</div>');
   ex.push(trace ? '<div class="text-line"><span style="color:var(--sub)">痕迹</span> '+esc(trace)+'</div>'
                 : '<div class="text-line empty">痕迹：无</div>');
-  ex.push(mod ? '<div class="text-line"><span style="color:var(--sub)">改造</span> '+esc(mod)+'</div>'
-              : '<div class="text-line empty">改造：无</div>');
+  var mods = String(mod || '').split(/[\n;；、]/).map(function(s){ return s.trim(); }).filter(Boolean);
+  if (mods.length) {
+    mods.forEach(function(md){
+      ex.push('<div class="mod-item"><span class="dot">●</span><span>'+esc(md)+'</span></div>');
+    });
+  } else {
+    ex.push('<div class="text-line empty">改造：无</div>');
+  }
   ex.push('</div>');
-  /* 部位 */
+
+  /* ── 部位：熟练/开发（保留进度条） ── */
   var PARTS = ['手','嘴','穴','尻','尿','胸'];
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>部位</div>');
   ex.push('<div class="parts-grid">');
