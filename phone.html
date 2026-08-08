@@ -333,19 +333,24 @@ function renderProfile(){
     '</div>');
   ex.push('</div>');
 
-  /* ── 衣着：只显示实际穿着的（七件套） ── */
+  /* ── 衣着：只显示实际穿着的（七件套；外衣按物品智能命名） ── */
   var worn = CLOTH7.filter(function(k){
     return pathGet(st, '角色.衣着.'+k+'.物品', '未穿') !== '未穿';
   }).map(function(k){
     var item = pathGet(st, '角色.衣着.'+k+'.物品', '未穿');
     var stt = pathGet(st, '角色.衣着.'+k+'.状态', '完好');
     var cls = stt==='完好'?'badge-green':(stt==='半褪'?'badge-amber':(stt==='脱下'||stt==='破损'||stt==='脱除')?'badge-red':'badge-blue');
-    return { k:k, item:item, stt:stt, cls:cls };
+    var label = k;
+    if (k === '外衣') {
+      if (/裙/.test(item)) label = '裙装';
+      else if (/外套|大衣|风衣|夹克/.test(item)) label = '外套';
+    }
+    return { k:k, label:label, item:item, stt:stt, cls:cls };
   });
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>衣着</div>');
   if (worn.length) {
     worn.forEach(function(c){
-      ex.push('<div class="row"><span class="k">'+esc(c.k)+'</span><span class="v">'+esc(c.item)+' '+badge(c.stt, c.cls)+'</span></div>');
+      ex.push('<div class="row"><span class="k">'+esc(c.label)+'</span><span class="v">'+esc(c.item)+' '+badge(c.stt, c.cls)+'</span></div>');
     });
   } else {
     ex.push('<div class="text-line empty">无衣物</div>');
