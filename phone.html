@@ -334,7 +334,8 @@ function renderProfile(){
     '</div>');
   ex.push('</div>');
 
-  /* ── 衣着：只显示实际穿着的（七件套；外衣按物品智能命名） ── */
+  /* ── 衣着：只显示实际穿着的；按身体部位排序（上半身组 → 下半身组 → 脚） ──
+     外衣字段按物品归类：裙装→下半身组，外套类→上半身组 */
   var worn = CLOTH7.filter(function(k){
     return pathGet(st, '角色.衣着.'+k+'.物品', '未穿') !== '未穿';
   }).map(function(k){
@@ -349,8 +350,11 @@ function renderProfile(){
       if (/裤/.test(item)) label = '裤子';
       else if (/裙/.test(item)) label = '裙子';
     }
-    return { k:k, label:label, item:item, stt:stt, cls:cls };
-  });
+    // 排序权重：上半身 10/20/30 → 下半身 70/80/90 → 鞋 100
+    var rank = { '鞋':100, '丝袜':90, '内裤':80, '下装':70, '胸罩':20, '上装':10 }[k];
+    if (rank === undefined) rank = /裙/.test(item) ? 70 : 30; // 外衣：裙装→下半身，外套→上半身
+    return { k:k, label:label, item:item, stt:stt, cls:cls, rank:rank };
+  }).sort(function(a, b){ return a.rank - b.rank; });
   ex.push('<div class="section"><div class="section-title"><span class="dot"></span>衣着</div>');
   if (worn.length) {
     worn.forEach(function(c){
